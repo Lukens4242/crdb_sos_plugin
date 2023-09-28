@@ -32,8 +32,10 @@ class crdb(Plugin, IndependentPlugin):
     if "--insecure" in cmdline:
         optinsec=True
 
+    crdbexec = "/proc/" + pid + "/exe"
+
     option_list = [
-        PluginOpt('crdbexec', desc='full path to the cockroach executable if it is not in your path', default='cockroach'),
+        PluginOpt('crdbexec', desc='full path to the cockroach executable if it is not in your path', default=crdbexec),
         PluginOpt('url', desc='pgurl for the cluster', default='postgres://localhost:26257'),
         PluginOpt('certsdir', desc='path to the certificate directory containing the CA and client certs and client key', default=''),
         PluginOpt('insecure', desc='Set to true if using an insecure cluster', default=optinsec),
