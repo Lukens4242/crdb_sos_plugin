@@ -3,7 +3,7 @@ import os, sys, re
 from datetime import datetime
 import subprocess
 
-class crdb(Plugin, IndependentPlugin):
+class cockroach(Plugin, IndependentPlugin):
     """
     This plugin will capture information about CockroachDB
     installed on the system.
@@ -14,7 +14,7 @@ class crdb(Plugin, IndependentPlugin):
 
     short_desc = 'CockroachDB debug'
 
-    plugin_name = "crdb"
+    plugin_name = "cockroach"
     profiles = ('services',)
 
     #null things out to start with
@@ -23,6 +23,7 @@ class crdb(Plugin, IndependentPlugin):
     optinsec = False 
     crdbexec = ''
 
+    #go find the pid and list of args passed to cockroach
     ps_output = subprocess.check_output(['ps', 'aux']).decode('utf-8').split('\n')
     for line in ps_output:
         if 'cockroach start' in line.lower():
@@ -30,11 +31,14 @@ class crdb(Plugin, IndependentPlugin):
             pid = fields[1]
             cmdline = ' '.join(fields[10:])
 
+    #figure out if the cockroach processes is running in insecure mode or not
     if "--insecure" in cmdline:
         optinsec=True
 
+    #find the executable that is running with full path
     crdbexec = "/proc/" + pid + "/exe"
 
+    #build the url from the advertise address on the command line
     match = re.search(r'--advertise-addr=([^ ]+)', cmdline)
     if match is None:
         url = ''
@@ -42,6 +46,7 @@ class crdb(Plugin, IndependentPlugin):
         advertise = match.group(1)
         url = "postgres://" + advertise
 
+    #build the certs directory from the cwd of the running process plus command line options passed to cockroach
     match = re.search(r'--certs-dir\s+([^\s]+)', cmdline)
     if match is None:
         certs = ''
@@ -64,10 +69,12 @@ class crdb(Plugin, IndependentPlugin):
         certsdir = self.get_option('certsdir')
         crdbexec = self.get_option('crdbexec')
 
+        #build the filename for the debug zip file
         now = datetime.now()
         mydate = now.strftime("%Y-%m-%d-%H:%M:%S")
         debugfile = "/tmp/debug-crdb" + mydate + ".zip"
 
+        #build the debug zip command
         if self.get_option("insecure"): 
             cmd = crdbexec + " debug zip --insecure --url " + url + " " + debugfile
         else:
@@ -76,6 +83,7 @@ class crdb(Plugin, IndependentPlugin):
         if self.get_option("redact"):
             cmd = cmd + " --redact"
 
+        #find the pid of the cockroach process so we know it is running
         pid=''
         ps_output = subprocess.check_output(['ps', 'aux']).decode('utf-8').split('\n')
         for line in ps_output:
@@ -83,6 +91,7 @@ class crdb(Plugin, IndependentPlugin):
                 fields = line.split()
                 pid = fields[1]
 
+        #generate the debug zip, capture the output and the generated file
         if pid:
             crdbout = self.collect_cmd_output(cmd, sizelimit=None, suggest_filename="cockroach")
             if crdbout['status'] == 0:
