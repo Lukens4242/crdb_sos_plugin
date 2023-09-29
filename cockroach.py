@@ -41,7 +41,7 @@ class cockroach(Plugin, IndependentPlugin):
     #build the url from the advertise address on the command line
     match = re.search(r'--advertise-addr=([^ ]+)', cmdline)
     if match is None:
-        url = ''
+        url = 'postgres://localhost:26257'
     else: 
         advertise = match.group(1)
         url = "postgres://" + advertise
