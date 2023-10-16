@@ -1,7 +1,7 @@
 # crdb_sos_plugin
 A sos report plugin that deals with cockroachdb
 
-Put this into /usr/lib/python3/dist-packages/report/plugins/
+Put this into /usr/lib/python3/dist-packages/sos/report/plugins/
 
 Todo:
 * code review
